@@ -22,8 +22,8 @@
 
 	var modes = [
 		'', 'Legacy', true,
-		'n', 'N', hwmodes.n,
-		'ac', 'AC', hwmodes.ac
+//		'n', 'N', hwmodes.n,
+//		'ac', 'AC', hwmodes.ac
 	];
 
 	var htmodes = {
@@ -76,7 +76,7 @@
 			sel.add(opt);
 		}
 
-		if (!isNaN(vals.selected))
+		if (vals && !isNaN(vals.selected))
 			sel.selectedIndex = vals.selected;
 
 		sel.parentNode.style.display = (sel.options.length <= 1) ? 'none' : '';
@@ -132,7 +132,8 @@
 
 		cbi_toggle_wifi_mode(id);
 
-		if (/a/.test(<%= luci.http.write_json(self.map:get(section, "hwmode")) %>))
+//		if (/a/.test(<%= luci.http.write_json(self.map:get(section, "hwmode")) %>))
+		if ((freqlist[1].mhz) > 2484)
 			band.value = '11a';
 		else
 			band.value = '11g';

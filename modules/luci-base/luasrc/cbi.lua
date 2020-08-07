@@ -14,6 +14,7 @@ local uci        = require("luci.model.uci")
 local datatypes  = require("luci.cbi.datatypes")
 local class      = util.class
 local instanceof = util.instanceof
+local ctcapdcall = require("luci.ctcapdcall")
 
 FORM_NODATA  =  0
 FORM_PROCEED =  0
@@ -363,7 +364,8 @@ function Map.parse(self, readinput, ...)
 		if self:submitstate() and ((not self.proceed and self.flow.autoapply) or luci.http.formvalue("cbi.apply")) then
 			self:_run_hooks("on_before_commit")
 			for i, config in ipairs(self.parsechain) do
-				self.uci:commit(config)
+				local cvaluetb = ctcapdcall.get_cvaluetb(self.children)
+				ctcapdcall.wrap_ubus_calltb(self, cvaluetb, config)
 
 				-- Refresh data because commit changes section names
 				self.uci:load(config)

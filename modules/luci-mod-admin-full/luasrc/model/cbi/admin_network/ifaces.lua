@@ -207,12 +207,13 @@ p_switch.inputstyle = "apply"
 
 local _, pr
 for _, pr in ipairs(nw:get_protocols()) do
-	p:value(pr:proto(), pr:get_i18n())
-	if pr:proto() ~= net:proto() then
-		p_switch:depends("proto", pr:proto())
+	if pr:proto() == "pppoe" or pr:proto() == "static" or pr:proto() == "dhcp" then
+		p:value(pr:proto(), pr:get_i18n())
+		if pr:proto() ~= net:proto() then
+			p_switch:depends("proto", pr:proto())
+		end
 	end
 end
-
 
 auto = s:taboption("advanced", Flag, "auto", translate("Bring up on boot"))
 auto.default = (net:proto() == "none") and auto.disabled or auto.enabled

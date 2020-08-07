@@ -14,7 +14,7 @@ username = section:taboption("general", Value, "username", translate("PAP/CHAP u
 password = section:taboption("general", Value, "password", translate("PAP/CHAP password"))
 password.password = true
 
-
+--[[
 ac = section:taboption("general", Value, "ac",
 	translate("Access Concentrator"),
 	translate("Leave empty to autodetect"))
@@ -27,7 +27,7 @@ service = section:taboption("general", Value, "service",
 	translate("Leave empty to autodetect"))
 
 service.placeholder = translate("auto")
-
+]]--
 
 if luci.model.network:has_ipv6() then
 

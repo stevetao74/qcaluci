@@ -135,7 +135,8 @@ else
 end
 
 
-local hwtype = wdev:get("type")
+--local hwtype = wdev:get("type")
+local hwtype = "mac80211"
 
 -- NanoFoo
 local nsantenna = wdev:get("antenna")
@@ -172,7 +173,7 @@ if found_sta then
 		end
 	end
 else
-	ch = s:taboption("general", Value, "_mode_freq", '<br />'..translate("Operating frequency"))
+	ch = s:taboption("general", Value, "_mode_freq", '<br />'..translate("Channel"))
 	ch.hwmodes = hw_modes
 	ch.freqlist = iw.freqlist
 	ch.template = "cbi/wireless_modefreq"
@@ -203,7 +204,7 @@ end
 ------------------- MAC80211 Device ------------------
 
 if hwtype == "mac80211" then
-	if #tx_power_list > 1 then
+--[[	if #tx_power_list > 1 then
 		tp = s:taboption("general", ListValue,
 			"txpower", translate("Transmit Power"), "dBm")
 		tp.rmempty = true
@@ -217,19 +218,22 @@ if hwtype == "mac80211" then
 				%{ p.display_dbm, p.display_mw })
 		end
 	end
-
+]]--
 	local cl = iw and iw.countrylist
 	if cl and #cl > 0 then
 		cc = s:taboption("advanced", ListValue, "country", translate("Country Code"), translate("Use ISO/IEC 3166 alpha2 country codes."))
-		cc.default = tostring(iw and iw.country or "00")
+--		cc.default = tostring(iw and iw.country or "00")
+		cc:value("CN", "CN - China")
 		for _, c in ipairs(cl) do
-			cc:value(c.alpha2, "%s - %s" %{ c.alpha2, c.name })
+			if not (c.alpha2 == "CN") then
+				cc:value(c.alpha2, "%s - %s" %{ c.alpha2, c.name })
+			end
 		end
 	else
 		s:taboption("advanced", Value, "country", translate("Country Code"), translate("Use ISO/IEC 3166 alpha2 country codes."))
 	end
 
-	s:taboption("advanced", Value, "distance", translate("Distance Optimization"),
+--[[	s:taboption("advanced", Value, "distance", translate("Distance Optimization"),
 		translate("Distance to farthest network member in meters."))
 
 	-- external antenna profiles
@@ -246,6 +250,7 @@ if hwtype == "mac80211" then
 
 	s:taboption("advanced", Value, "frag", translate("Fragmentation Threshold"))
 	s:taboption("advanced", Value, "rts", translate("RTS/CTS Threshold"))
+]]--
 end
 
 ------------------- qcawifi Device ------------------
@@ -408,6 +413,27 @@ mode:value("adhoc", translate("Ad-Hoc"))
 
 bssid = s:taboption("general", Value, "bssid", translate("<abbr title=\"Basic Service Set Identifier\">BSSID</abbr>"))
 
+function bssid.formvalue(self, section)
+	return self:cfgvalue(section)
+end
+
+
+idx = s:taboption("general", DummyValue, "idx", translate("<abbr title=\"idx to wifi.ap\">idx</abbr>"))
+idx:depends("xx","0")
+accessmode = s:taboption("general", DummyValue, "accessmode", translate("<abbr title=\"idx to wifi.ap\">accessmode</abbr>"))
+accessmode:depends("xx","0")
+accessrule = s:taboption("general", DummyValue, "accessrule", translate("<abbr title=\"idx to wifi.ap\">accessrule</abbr>"))
+accessrule:depends("xx","0")
+usbandwidth = s:taboption("general", DummyValue, "usbandwidth", translate("<abbr title=\"idx to wifi.ap\">usbandwidth</abbr>"))
+usbandwidth:depends("xx","0")
+dsbandwidth = s:taboption("general", DummyValue, "dsbandwidth", translate("<abbr title=\"idx to wifi.ap\">dsbandwidth</abbr>"))
+dsbandwidth:depends("xx","0")
+dev = s:taboption("general", DummyValue, "device", translate("<abbr title=\"device to wifi.ap\">device</abbr>"))
+dev:depends("xx","0")
+allowedipport = s:taboption("general", DummyValue, "allowedipport", translate("<abbr title=\"device to wifi.ap\">allowedipport</abbr>"))
+allowedipport:depends("xx","0")
+
+
 network = s:taboption("general", Value, "network", translate("Network"),
 	translate("Choose the network(s) you want to attach to this wireless interface or " ..
 		"fill out the <em>create</em> field to define a new network."))
@@ -459,7 +485,7 @@ if hwtype == "mac80211" then
 	bssid:depends({mode="adhoc"})
 	bssid:depends({mode="sta"})
 	bssid:depends({mode="sta-wds"})
-
+--[[
 	mp = s:taboption("macfilter", ListValue, "macfilter", translate("MAC-Address Filter"))
 	mp:depends({mode="ap"})
 	mp:depends({mode="ap-wds"})
@@ -472,7 +498,7 @@ if hwtype == "mac80211" then
 	ml:depends({macfilter="allow"})
 	ml:depends({macfilter="deny"})
 	nt.mac_hints(function(mac, name) ml:value(mac, "%s (%s)" %{ mac, name }) end)
-
+]]--
 	mode:value("ap-wds", "%s (%s)" % {translate("Access Point"), translate("WDS")})
 	mode:value("sta-wds", "%s (%s)" % {translate("Client"), translate("WDS")})
 
@@ -505,11 +531,17 @@ if hwtype == "mac80211" then
 	hidden = s:taboption("general", Flag, "hidden", translate("Hide <abbr title=\"Extended Service Set Identifier\">ESSID</abbr>"))
 	hidden:depends({mode="ap"})
 	hidden:depends({mode="ap-wds"})
+	
+	function hidden.parse(self, section)
+		local fvalue = self:formvalue(section) and self.enabled or self.disabled
+		self:write(section, fvalue)
+	end
 
-	wmm = s:taboption("general", Flag, "wmm", translate("WMM Mode"))
+--[[	wmm = s:taboption("general", Flag, "wmm", translate("WMM Mode"))
 	wmm:depends({mode="ap"})
 	wmm:depends({mode="ap-wds"})
 	wmm.default = wmm.enabled
+]]--
 end
 
 
@@ -729,24 +761,30 @@ encr:depends({mode="sta-wds"})
 encr:depends({mode="mesh"})
 
 cipher = s:taboption("encryption", ListValue, "cipher", translate("Cipher"))
+cipher:depends({encr="wpa"})
 cipher:depends({encryption="wpa"})
 cipher:depends({encryption="wpa2"})
 cipher:depends({encryption="psk"})
 cipher:depends({encryption="psk2"})
 cipher:depends({encryption="wpa-mixed"})
-cipher:depends({encryption="psk-mixed"})
-cipher:value("auto", translate("auto"))
-cipher:value("ccmp", translate("Force CCMP (AES)"))
-cipher:value("gcmp", translate("Force GCMP"))
-cipher:value("tkip", translate("Force TKIP"))
-cipher:value("tkip+ccmp", translate("Force TKIP and CCMP (AES)"))
+cipher:depends({encryption="mixed-psk"})
+--cipher:depends({encryption="psk-mixed"})
+--cipher:value("auto", translate("auto"))
+--cipher:value("ccmp", translate("Force CCMP (AES)"))
+cipher:value("ccmp", translate("AES"))
+--cipher:value("gcmp", translate("Force GCMP"))
+cipher:value("tkip", translate("TKIP"))
+--cipher:value("tkip", translate("Force TKIP"))
+cipher:value("tkip+ccmp", translate("TKIP + AES"))
+--cipher:value("tkip+ccmp", translate("Force TKIP and CCMP (AES)"))
 
 function encr.cfgvalue(self, section)
 	local v = tostring(ListValue.cfgvalue(self, section))
 	if v == "wep" then
 		return "wep-open"
 	elseif v and v:match("%+") then
-		return (v:gsub("%+.+$", ""))
+--		return (v:gsub("%+.+$", ""))
+	v = v:gsub("%+.+$", "")
 	end
 	return v
 end
@@ -754,9 +792,9 @@ end
 function encr.write(self, section, value)
 	local e = tostring(encr:formvalue(section))
 	local c = tostring(cipher:formvalue(section))
-	if value == "wpa" or value == "wpa2"  then
-		self.map.uci:delete("wireless", section, "key")
-	end
+--	if value == "wpa" or value == "wpa2"  then
+--		self.map.uci:delete("wireless", section, "key")
+--	end
 	if e and (c == "tkip" or c == "ccmp" or c == "gcmp" or c == "tkip+ccmp") then
 		e = e .. "+" .. c
 	end
@@ -767,17 +805,20 @@ function cipher.cfgvalue(self, section)
 	local v = tostring(ListValue.cfgvalue(encr, section))
 	if v and v:match("%+") then
 		v = v:gsub("^[^%+]+%+", "")
-		if v == "aes" then v = "ccmp"
+--[[		if v == "aes" then v = "ccmp"
 		elseif v == "tkip+aes" then v = "tkip+ccmp"
 		elseif v == "aes+tkip" then v = "tkip+ccmp"
 		elseif v == "ccmp+tkip" then v = "tkip+ccmp"
-		end
+]]--
 	end
+
 	return v
 end
 
 function cipher.write(self, section)
+--[[
 	return encr:write(section)
+]]--
 end
 
 
@@ -803,7 +844,8 @@ if hwtype == "atheros" or hwtype == "qcawifi" or hwtype == "mac80211" or hwtype 
 	if hostapd and supplicant then
 		encr:value("psk", "WPA-PSK", {mode="ap"}, {mode="sta"}, {mode="ap-wds"}, {mode="sta-wds"})
 		encr:value("psk2", "WPA2-PSK", {mode="ap"}, {mode="sta"}, {mode="ap-wds"}, {mode="sta-wds"})
-		encr:value("psk-mixed", "WPA-PSK/WPA2-PSK Mixed Mode", {mode="ap"}, {mode="sta"}, {mode="ap-wds"}, {mode="sta-wds"})
+		encr:value("mixed-psk", "WPA-PSK/WPA2-PSK Mixed Mode", {mode="ap"}, {mode="sta"}, {mode="ap-wds"}, {mode="sta-wds"})
+--		encr:value("psk-mixed", "WPA-PSK/WPA2-PSK Mixed Mode", {mode="ap"}, {mode="sta"}, {mode="ap-wds"}, {mode="sta-wds"})
 		if has_ap_eap and has_sta_eap then
 			encr:value("wpa", "WPA-EAP", {mode="ap"}, {mode="sta"}, {mode="ap-wds"}, {mode="sta-wds"})
 			encr:value("wpa2", "WPA2-EAP", {mode="ap"}, {mode="sta"}, {mode="ap-wds"}, {mode="sta-wds"})
@@ -811,7 +853,8 @@ if hwtype == "atheros" or hwtype == "qcawifi" or hwtype == "mac80211" or hwtype 
 	elseif hostapd and not supplicant then
 		encr:value("psk", "WPA-PSK", {mode="ap"}, {mode="ap-wds"})
 		encr:value("psk2", "WPA2-PSK", {mode="ap"}, {mode="ap-wds"})
-		encr:value("psk-mixed", "WPA-PSK/WPA2-PSK Mixed Mode", {mode="ap"}, {mode="ap-wds"})
+		encr:value("mixed-psk", "WPA-PSK/WPA2-PSK Mixed Mode", {mode="ap"}, {mode="ap-wds"})
+--		encr:value("psk-mixed", "WPA-PSK/WPA2-PSK Mixed Mode", {mode="ap"}, {mode="ap-wds"})
 		if has_ap_eap then
 			encr:value("wpa", "WPA-EAP", {mode="ap"}, {mode="ap-wds"})
 			encr:value("wpa2", "WPA2-EAP", {mode="ap"}, {mode="ap-wds"})
@@ -823,7 +866,8 @@ if hwtype == "atheros" or hwtype == "qcawifi" or hwtype == "mac80211" or hwtype 
 	elseif not hostapd and supplicant then
 		encr:value("psk", "WPA-PSK", {mode="sta"}, {mode="sta-wds"})
 		encr:value("psk2", "WPA2-PSK", {mode="sta"}, {mode="sta-wds"})
-		encr:value("psk-mixed", "WPA-PSK/WPA2-PSK Mixed Mode", {mode="sta"}, {mode="sta-wds"})
+		encr:value("mixed-psk", "WPA-PSK/WPA2-PSK Mixed Mode", {mode="sta"}, {mode="sta-wds"})
+--		encr:value("psk-mixed", "WPA-PSK/WPA2-PSK Mixed Mode", {mode="sta"}, {mode="sta-wds"})
 		if has_sta_eap then
 			encr:value("wpa", "WPA-EAP", {mode="sta"}, {mode="sta-wds"})
 			encr:value("wpa2", "WPA2-EAP", {mode="sta"}, {mode="sta-wds"})
@@ -896,7 +940,8 @@ wpakey = s:taboption("encryption", Value, "_wpa_key", translate("Key"))
 wpakey:depends("encryption", "psk")
 wpakey:depends("encryption", "psk2")
 wpakey:depends("encryption", "psk+psk2")
-wpakey:depends("encryption", "psk-mixed")
+wpakey:depends("encryption", "mixed-psk")
+--wpakey:depends("encryption", "psk-mixed")
 wpakey.datatype = "wpakey"
 wpakey.rmempty = true
 wpakey.password = true
@@ -1140,13 +1185,14 @@ if hwtype == "atheros" or hwtype == "mac80211" or hwtype == "prism2" then
 	local wpasupplicant = fs.access("/usr/sbin/wpa_supplicant")
 	local hostcli = fs.access("/usr/sbin/hostapd_cli")
 	if hostcli and wpasupplicant then
-		wps = s:taboption("encryption", Flag, "wps_pushbutton", translate("Enable WPS pushbutton, requires WPA(2)-PSK"))
+--[[		wps = s:taboption("encryption", Flag, "wps_pushbutton", translate("Enable WPS pushbutton, requires WPA(2)-PSK"))
 		wps.enabled = "1"
 		wps.disabled = "0"
 		wps.rmempty = false
 		wps:depends("encryption", "psk")
 		wps:depends("encryption", "psk2")
 		wps:depends("encryption", "psk-mixed")
+]]--
 	end
 end
 

@@ -24,7 +24,53 @@ netmask:value("255.0.0.0")
 gateway = section:taboption("general", Value, "gateway", translate("IPv4 gateway"))
 gateway.datatype = "ip4addr"
 
+dns1 = section:taboption("general", Value, "dns1",	translate("DNS1"))
+dns1.datatype = "ip4addr"
 
+dns2 = section:taboption("general", Value, "dns2",	translate("DNS2"))
+dns2.datatype = "ip4addr"
+
+function dns1.cfgvalue(self, section)
+	local value = self.map:get(section, "dns")
+	if value ~= nil and #value > 0 then
+		return value[1]
+	end
+end
+
+function dns2.cfgvalue(self, section)
+	local value = self.map:get(section, "dns")
+	if value ~= nil and #value > 1 then
+		return value[2]
+	end
+end
+
+function dns1.write(self, section)
+
+end
+
+function dns2.write(self, section, value1, value2)
+	local valuetb = {}
+	if value1 ~= nil then
+		table.insert(valuetb, 1, value1)
+	elseif value1 == nil then
+		table.insert(valuetb, 1, "")
+	end
+
+	if value1 ~= nil then
+		table.insert(valuetb, 2, value2)
+	elseif value1 == nil then
+		table.insert(valuetb, 2, "")
+	end
+	self.map:set(section, "dns", valuetb)
+end
+
+function dns2.parse(self, section, novld)
+	local value1 = AbstractValue.formvalue(dns1, section)
+	local value2 = AbstractValue.formvalue(dns2, section)
+	self:write(section, value1, value2)
+end
+
+--[[
 broadcast = section:taboption("general", Value, "broadcast", translate("IPv4 broadcast"))
 broadcast.datatype = "ip4addr"
 
@@ -34,7 +80,6 @@ dns = section:taboption("general", DynamicList, "dns",
 
 dns.datatype = "ipaddr"
 dns.cast     = "string"
-
 
 if luci.model.network:has_ipv6() then
 
@@ -79,3 +124,4 @@ metric = section:taboption("advanced", Value, "metric",
 
 metric.placeholder = "0"
 metric.datatype    = "uinteger"
+]]--
