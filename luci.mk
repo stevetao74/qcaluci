@@ -120,12 +120,15 @@ ifeq ($(PKG_NAME),luci-base)
 endif
 
 define Build/Prepare
-	for d in luasrc htdocs root src; do \
+	for d in luasrc htdocs root src ; do \
 	  if [ -d ./$$$$d ]; then \
 	    mkdir -p $(PKG_BUILD_DIR)/$$$$d; \
 		$(CP) ./$$$$d/* $(PKG_BUILD_DIR)/$$$$d/; \
 	  fi; \
-	done
+	done; \
+	$(CP) ./$(PKG_NAME).patch $(PKG_BUILD_DIR)/.; \
+	cd $(PKG_BUILD_DIR) &&	patch -Np1 < $(PKG_NAME).patch; 
+	
 	$(call Build/Prepare/Default)
 endef
 
