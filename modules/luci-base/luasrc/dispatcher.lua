@@ -10,6 +10,7 @@ local nixio = require "nixio", require "nixio.util"
 module("luci.dispatcher", package.seeall)
 context = util.threadlocal()
 uci = require "luci.model.uci"
+local tmpuci = uci.cursor()
 i18n = require "luci.i18n"
 _M.fs = fs
 
@@ -108,9 +109,41 @@ function authenticator.htmlauth(validator, accs, default)
 	local user = http.formvalue("luci_username")
 	local pass = http.formvalue("luci_password")
 
+	local bwarn = false
+	local authtotaltimes = tonumber(tmpuci.get("luci", "htmlauth", "totaltimes"))
+	local authinterval = tonumber(tmpuci.get("luci", "htmlauth", "interval"))
+	local authtimes = tonumber(tmpuci.get("luci", "htmlauth", "times"))
+	local tmpcurtime = os.time()
+
 	if user and validator(user, pass) then
+		tmpuci.set("luci", "htmlauth", "1sttime", 0)
+		tmpuci.set("luci", "htmlauth", "times", 0)
+		tmpuci.commit("luci")
 		return user
 	end
+
+	nixio.openlog("LuCI-sysauth", "cons", "pid")
+	if user then
+		if authtimes == 0 then
+			tmpuci.set("luci", "htmlauth", "1sttime", tmpcurtime)
+		else
+			local auth1sttime = tonumber(tmpuci.get("luci", "htmlauth", "1sttime"))
+			if os.difftime(tmpcurtime, auth1sttime) > authinterval then
+				tmpuci.set("luci", "htmlauth", "times", 1)
+				tmpuci.set("luci", "htmlauth", "1sttime", tmpcurtime)
+			elseif os.difftime(tmpcurtime, auth1sttime) <= authinterval then
+				authtimes = authtimes + 1
+				tmpuci.set("luci", "htmlauth", "times", authtimes)
+
+				if authtimes >= authtotaltimes then
+					bwarn = true
+				end
+			end
+		end
+		nixio.syslog("warning", "Login failed %d times in %ds." % {authtimes, authinterval})
+		tmpuci.commit("luci")
+	end
+	nixio.closelog()
 
 	if context.urltoken.stok then
 		context.urltoken.stok = nil
@@ -128,7 +161,7 @@ function authenticator.htmlauth(validator, accs, default)
 		require("luci.template")
 		context.path = {}
 		http.status(403, "Forbidden")
-		luci.template.render("sysauth", {duser=default, fuser=user})
+		luci.template.render("sysauth", {duser=default, fuser=user, fbwarn=bwarn})
 	end
 
 	return false

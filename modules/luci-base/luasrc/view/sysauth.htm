@@ -28,14 +28,21 @@
 				<div class="cbi-value-field">
 					<input class="cbi-input-password" type="password" name="luci_password" />
 				</div>
+
 			</div>
 		</fieldset></fieldset>
 	</div>
 
-	<div>
-		<input type="submit" value="<%:Login%>" class="cbi-button cbi-button-apply" />
-		<input type="reset" value="<%:Reset%>" class="cbi-button cbi-button-reset" />
-	</div>
+	<br />
+	<% if not fbwarn then %>
+		<div>
+			<input type="submit" value="<%:Login%>" class="cbi-button cbi-button-apply" />
+			<input type="reset" value="<%:Reset%>" class="cbi-button cbi-button-reset" />
+		</div>
+	<% else %>
+		<%:login failed too many! Please try again later.%>
+	<% end %>
+	<br />
 </form>
 <script type="text/javascript">//<![CDATA[
 	var input = document.getElementsByName('luci_password')[0];
