@@ -108,40 +108,56 @@ end
 function authenticator.htmlauth(validator, accs, default)
 	local user = http.formvalue("luci_username")
 	local pass = http.formvalue("luci_password")
+	local fd
 
-	local bwarn = false
-	local authtotaltimes = tonumber(tmpuci.get("luci", "htmlauth", "totaltimes"))
-	local authinterval = tonumber(tmpuci.get("luci", "htmlauth", "interval"))
-	local authtimes = tonumber(tmpuci.get("luci", "htmlauth", "times"))
-	local tmpcurtime = os.time()
+	if not nixio.fs.access("/tmp/authfail") then
+		fd = io.open("/tmp/authfail", "w+")
+		fd:write("3 1 60 0")
+		fd:close()
+	end
 
 	if user and validator(user, pass) then
-		tmpuci.set("luci", "htmlauth", "1sttime", 0)
-		tmpuci.set("luci", "htmlauth", "times", 0)
-		tmpuci.commit("luci")
+		fd = io.open("/tmp/authfail", "w+")
+		fd:write("3 0 60 0")
+		fd:close(fd)
 		return user
 	end
 
+	local bwarn = false
+	fd = io.open("/tmp/authfail", "r")
+	local str = fd:read()
+	fd:close()
+	local authtotaltimes, authcnt, authinterval, auth1sttime = string.match(str, "(%d+)%s(%d+)%s(%d+)%s(%d+)")
+	authtotaltimes, authcnt, authinterval, auth1sttime = tonumber(authtotaltimes), tonumber(authcnt), tonumber(authinterval), tonumber(auth1sttime)
+
 	nixio.openlog("LuCI-sysauth", "cons", "pid")
 	if user then
-		if authtimes == 0 then
-			tmpuci.set("luci", "htmlauth", "1sttime", tmpcurtime)
-		else
-			local auth1sttime = tonumber(tmpuci.get("luci", "htmlauth", "1sttime"))
-			if os.difftime(tmpcurtime, auth1sttime) > authinterval then
-				tmpuci.set("luci", "htmlauth", "times", 1)
-				tmpuci.set("luci", "htmlauth", "1sttime", tmpcurtime)
-			elseif os.difftime(tmpcurtime, auth1sttime) <= authinterval then
-				authtimes = authtimes + 1
-				tmpuci.set("luci", "htmlauth", "times", authtimes)
+		local tmpcurtime = os.time()
 
-				if authtimes >= authtotaltimes then
+		if authcnt == 0 then
+			authcnt = authcnt + 1
+
+			fd = io.open("/tmp/authfail", "w+")
+			fd:write("%d %d %d %d" % {authtotaltimes, authcnt, authinterval, tmpcurtime})
+			fd:close()
+		else
+			authcnt = authcnt + 1
+
+			if os.difftime(tmpcurtime, auth1sttime) > authinterval then
+				fd = io.open("/tmp/authfail", "w+")
+				fd:write("%d %d %d %d" % {authtotaltimes, 1, authinterval, tmpcurtime})
+				fd:close()
+			elseif os.difftime(tmpcurtime, auth1sttime) <= authinterval then
+				fd = io.open("/tmp/authfail", "w+")
+				fd:write("%d %d %d %d" % {authtotaltimes, authcnt, authinterval, auth1sttime})
+				fd:close()
+
+				if authcnt >= authtotaltimes then
 					bwarn = true
 				end
 			end
 		end
-		nixio.syslog("warning", "Login failed %d times in %ds." % {authtimes, authinterval})
-		tmpuci.commit("luci")
+		nixio.syslog("warning", "Login failed %d times in %ds." % {authcnt, authinterval})
 	end
 	nixio.closelog()
 

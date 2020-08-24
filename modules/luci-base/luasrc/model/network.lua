@@ -1447,6 +1447,9 @@ end
 
 function wifinet.active_encryption(self)
 	local enc = self.iwinfo and self.iwinfo.encryption
+	if enc and enc.description == "None" then
+		return self.iwdata.encryption
+	end
 	return enc and enc.description or "-"
 end
 

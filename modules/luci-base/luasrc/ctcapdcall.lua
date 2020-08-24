@@ -27,7 +27,7 @@ function M.wrap_ubus_calltb_wireless(self, cvaluetb)
     tmpvaluetb["dsbandwidth"] = tonumber(cvaluetb["dsbandwidth"])
 
     local tbauth = {psk = "wpa2psk", psk2 = "wpapsk"}
-    tbauth['psk-mixed'] = "wpapskwpa2psk"
+    tbauth['mixed-psk'] = "wpapskwpa2psk"
     local tbencr = {tkip = "tkip", ccmp = "aes"}
     tbencr['tkip+ccmp'] = "aestkip"
 

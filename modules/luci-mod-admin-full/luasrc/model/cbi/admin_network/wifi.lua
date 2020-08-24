@@ -122,7 +122,8 @@ st = s:taboption("general", DummyValue, "__status", translate("Status"))
 st.template = "admin_network/wifi_status"
 st.ifname   = arg[1]
 
-en = s:taboption("general", Button, "__toggle")
+--[[
+	en = s:taboption("general", Button, "__toggle")
 
 if wdev:get("disabled") == "1" or wnet:get("disabled") == "1" then
 	en.title      = translate("Wireless network is disabled")
@@ -133,6 +134,7 @@ else
 	en.inputtitle = translate("Disable")
 	en.inputstyle = "reset"
 end
+]]--
 
 
 --local hwtype = wdev:get("type")
@@ -420,17 +422,17 @@ end
 
 idx = s:taboption("general", DummyValue, "idx", translate("<abbr title=\"idx to wifi.ap\">idx</abbr>"))
 idx:depends("xx","0")
-accessmode = s:taboption("general", DummyValue, "accessmode", translate("<abbr title=\"idx to wifi.ap\">accessmode</abbr>"))
+accessmode = s:taboption("general", DummyValue, "accessmode", translate("<abbr title=\"accessmode to wifi.ap\">accessmode</abbr>"))
 accessmode:depends("xx","0")
-accessrule = s:taboption("general", DummyValue, "accessrule", translate("<abbr title=\"idx to wifi.ap\">accessrule</abbr>"))
+accessrule = s:taboption("general", DummyValue, "accessrule", translate("<abbr title=\"accessrule to wifi.ap\">accessrule</abbr>"))
 accessrule:depends("xx","0")
-usbandwidth = s:taboption("general", DummyValue, "usbandwidth", translate("<abbr title=\"idx to wifi.ap\">usbandwidth</abbr>"))
+usbandwidth = s:taboption("general", DummyValue, "usbandwidth", translate("<abbr title=\"usbandwidth to wifi.ap\">usbandwidth</abbr>"))
 usbandwidth:depends("xx","0")
-dsbandwidth = s:taboption("general", DummyValue, "dsbandwidth", translate("<abbr title=\"idx to wifi.ap\">dsbandwidth</abbr>"))
+dsbandwidth = s:taboption("general", DummyValue, "dsbandwidth", translate("<abbr title=\"dsbandwidth to wifi.ap\">dsbandwidth</abbr>"))
 dsbandwidth:depends("xx","0")
 dev = s:taboption("general", DummyValue, "device", translate("<abbr title=\"device to wifi.ap\">device</abbr>"))
 dev:depends("xx","0")
-allowedipport = s:taboption("general", DummyValue, "allowedipport", translate("<abbr title=\"device to wifi.ap\">allowedipport</abbr>"))
+allowedipport = s:taboption("general", DummyValue, "allowedipport", translate("<abbr title=\"allowedipport to wifi.ap\">allowedipport</abbr>"))
 allowedipport:depends("xx","0")
 
 

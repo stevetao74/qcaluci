@@ -196,14 +196,15 @@ function wifi_add()
 	dev = dev and ntm:get_wifidev(dev)
 
 	if dev then
-		local net = dev:add_wifinet({
-			mode       = "ap",
-			ssid       = "OpenWrt",
-			encryption = "none"
-		})
+		local devid = string.match(dev.sid, "(%d)")
+		if devid == '0' then
+			devid = "2"
+		end
+		local cmdaddwifi = "'{\"enable\":\"yes\",\"ssid\":\"%d\",\"key\":\"\",\"auth\":\"open\",\"encrypt\":\"none\",\"hide\":0,\"accessmode\":0,\"accessrule\":1,\"allowedipport\":\"\",\"usbandwidth\":0,\"dsbandwidth\":0}'" % os.time()
+		local cmdwifi = "/bin/ubus call ctcapd.wifi.%s.ap add %s" % {devid, cmdaddwifi}
+		luci.sys.call("env -i %s >/dev/null 2>/dev/null" % cmdwifi)
 
-		ntm:save("wireless")
-		luci.http.redirect(net:adminlink())
+		luci.http.redirect(luci.dispatcher.build_url("admin/network/wireless"))
 	end
 end
 
@@ -212,18 +213,14 @@ function wifi_delete(network)
 	local wnet = ntm:get_wifinet(network)
 	if wnet then
 		local dev = wnet:get_device()
-		local nets = wnet:get_networks()
 		if dev then
-			ntm:del_wifinet(network)
-			ntm:commit("wireless")
-			local _, net
-			for _, net in ipairs(nets) do
-				if net:is_empty() then
-					ntm:del_network(net:name())
-					ntm:commit("network")
-				end
+			local idx = wnet:get("idx")
+			local devid = string.match(dev.sid, "(%d)")
+			if devid == '0' then
+				devid = "2"
 			end
-			luci.sys.call("env -i /bin/ubus call network reload >/dev/null 2>/dev/null")
+			local cmdwifi = "/bin/ubus call ctcapd.wifi.%s.ap delete '{\"idx\":%d}'" % {devid, tonumber(idx)}
+			luci.sys.call("env -i %s >/dev/null 2>/dev/null" % cmdwifi)
 		end
 	end
 
@@ -373,11 +370,18 @@ local function wifi_reconnect_shutdown(shutdown, wnet)
 	local net = netmd:get_wifinet(wnet)
 	local dev = net:get_device()
 	if dev and net then
-		dev:set("disabled", nil)
-		net:set("disabled", shutdown and 1 or nil)
-		netmd:commit("wireless")
+		local idx = net:get("idx")
+		local devid = string.match(dev.sid, "(%d)")
+		if devid == '0' then
+			devid = "2"
+		end
+		if not shutdown then
+			local cmdwifi = "/bin/ubus call ctcapd.wifi.%s set '{\"enable\":\"yes\"}'" % {devid}
+			luci.sys.call("env -i %s >/dev/null 2>/dev/null" % cmdwifi)
+		end
 
-		luci.sys.call("env -i /bin/ubus call network reload >/dev/null 2>/dev/null")
+		local cmdap = "/bin/ubus call ctcapd.wifi.%s.ap.%s set '{\"enable\":\"%s\"}'" % {devid, idx, shutdown and "no" or "yes"}
+		luci.sys.call("env -i %s >/dev/null 2>/dev/null" % cmdap)
 		luci.http.status(200, shutdown and "Shutdown" or "Reconnected")
 
 		return
