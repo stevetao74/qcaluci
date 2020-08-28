@@ -17,7 +17,15 @@
 									e.innerHTML = '<%:Configuration applied.%>';
 									window.setTimeout(function() {
 										e.parentNode.style.display = 'none';
-										<% if redirect then %>location.href='<%=redirect%>';<% end %>
+										<% if redirect then
+											if string.find(redirect, "admin/network/wireless$") then
+												if nixio.fork() == 0 then
+													os.execute("/sbin/wifi")
+												end
+											end
+										%>
+										location.href='<%=redirect%>';
+										<% end %>
 									}, 1000);
 								}
 							}
