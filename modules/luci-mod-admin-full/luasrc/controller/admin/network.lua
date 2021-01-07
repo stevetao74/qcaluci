@@ -215,6 +215,10 @@ function wifi_delete(network)
 		local dev = wnet:get_device()
 		if dev then
 			local idx = wnet:get("idx")
+			if idx == nil then
+				luci.http.redirect(luci.dispatcher.build_url("admin/network/wireless"))
+			end
+
 			local devid = string.match(dev.sid, "(%d)")
 			if devid == '0' then
 				devid = "2"

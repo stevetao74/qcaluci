@@ -116,10 +116,14 @@ function authenticator.htmlauth(validator, accs, default)
 		fd:close()
 	end
 
+	nixio.openlog("LuCI-sysauth", "cons", "pid")
 	if user and validator(user, pass) then
 		fd = io.open("/tmp/authfail", "w+")
 		fd:write("3 0 60 0")
 		fd:close(fd)
+
+		nixio.syslog("warning", "user %s Login successed." % {user})
+		nixio.closelog()
 		return user
 	end
 
@@ -130,7 +134,6 @@ function authenticator.htmlauth(validator, accs, default)
 	local authtotaltimes, authcnt, authinterval, auth1sttime = string.match(str, "(%d+)%s(%d+)%s(%d+)%s(%d+)")
 	authtotaltimes, authcnt, authinterval, auth1sttime = tonumber(authtotaltimes), tonumber(authcnt), tonumber(authinterval), tonumber(auth1sttime)
 
-	nixio.openlog("LuCI-sysauth", "cons", "pid")
 	if user then
 		local tmpcurtime = os.time()
 
